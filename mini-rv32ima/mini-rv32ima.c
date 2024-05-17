@@ -39,6 +39,7 @@ static int ReadKBByte();
 
 #ifndef MINIRV32IMATINY
 #include "extension-C.h"
+#include "extension-F.h"
 #endif
 
 #include "mini-rv32ima.h"

@@ -73,6 +73,14 @@
 	#define IALIGN (4)
 #endif
 
+#ifndef MINIRV32IMA_ADDITIONAL_HEADER
+	#define MINIRV32IMA_ADDITIONAL_HEADER
+#endif
+
+#ifndef MINIRV32IMA_OTHER_OPCODES
+	#define MINIRV32IMA_OTHER_OPCODES
+#endif
+
 // As a note: We quouple-ify these, because in HLSL, we will be operating with
 // uint4's.  We are going to uint4 data to/from system RAM.
 //
@@ -105,6 +113,8 @@ struct MiniRV32IMAState
 	// Bit 2 = WFI (Wait for interrupt)
 	// Bit 3+ = Load/Store reservation LSBs.
 	uint32_t extraflags;
+
+	MINIRV32IMA_ADDITIONAL_HEADER
 };
 
 #ifndef MINIRV32_STEPPROTO
@@ -364,7 +374,7 @@ MINIRV32_STEPPROTO
 						case 0x342: rval = CSR( mcause ); break;
 						case 0x343: rval = CSR( mtval ); break;
 						case 0xf11: rval = 0xff0ff0ff; break; //mvendorid
-						case 0x301: rval = 0x40401105; break; //misa (XLEN=32, IMAC+X)
+						case 0x301: rval = 0x40401125; break; //misa (XLEN=32, IMAFC+X)
 						//case 0x3B0: rval = 0; break; //pmpaddr0
 						//case 0x3a0: rval = 0; break; //pmpcfg0
 						//case 0xf12: rval = 0x00000000; break; //marchid
@@ -487,7 +497,9 @@ MINIRV32_STEPPROTO
 					}
 					break;
 				}
-				default: MINIRV32IMA_EXTENSION_C_OPCODES; // Fault: Invalid opcode.
+				MINIRV32IMA_OTHER_OPCODES
+				default:
+					MINIRV32IMA_EXTENSION_C_OPCODES; // Fault: Invalid opcode.
 			}
 
 			// If there was a trap, do NOT allow register writeback.
