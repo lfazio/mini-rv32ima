@@ -68,6 +68,14 @@
 	#define MINIRV32_LOAD1_SIGNED( ofs ) *(int8_t*)(image + ofs)
 #endif
 
+#ifndef MINIRV32IMA_ADDITIONAL_F_STATE
+	#define MINIRV32IMA_ADDITIONAL_F_STATE
+#endif
+
+#ifndef MINIRV32IMA_OTHER_OPCODES
+	#define MINIRV32IMA_OTHER_OPCODES
+#endif
+
 // As a note: We quouple-ify these, because in HLSL, we will be operating with
 // uint4's.  We are going to uint4 data to/from system RAM.
 //
@@ -100,6 +108,8 @@ struct MiniRV32IMAState
 	// Bit 2 = WFI (Wait for interrupt)
 	// Bit 3+ = Load/Store reservation LSBs.
 	uint32_t extraflags;
+
+	MINIRV32IMA_ADDITIONAL_F_STATE;
 };
 
 #ifndef MINIRV32_STEPPROTO
@@ -355,7 +365,13 @@ MINIRV32_STEPPROTO
 						case 0x342: rval = CSR( mcause ); break;
 						case 0x343: rval = CSR( mtval ); break;
 						case 0xf11: rval = 0xff0ff0ff; break; //mvendorid
+<<<<<<< HEAD
 						case 0x301: rval = 0x40401101; break; //misa (XLEN=32, IMA+X)
+||||||| parent of 26e935e (wip: Add support for F extension)
+						case 0x301: rval = 0x40401105; break; //misa (XLEN=32, IMAC+X)
+=======
+						case 0x301: rval = 0x40401125; break; //misa (XLEN=32, IMAFC+X)
+>>>>>>> 26e935e (wip: Add support for F extension)
 						//case 0x3B0: rval = 0; break; //pmpaddr0
 						//case 0x3a0: rval = 0; break; //pmpcfg0
 						//case 0xf12: rval = 0x00000000; break; //marchid
@@ -478,7 +494,15 @@ MINIRV32_STEPPROTO
 					}
 					break;
 				}
+<<<<<<< HEAD
 				default: trap = (2+1); // Fault: Invalid opcode.
+||||||| parent of 26e935e (wip: Add support for F extension)
+				default: MINIRV32IMA_EXTENSION_C_OPCODES; // Fault: Invalid opcode.
+=======
+				MINIRV32IMA_OTHER_OPCODES
+				default:
+					MINIRV32IMA_EXTENSION_C_OPCODES; // Fault: Invalid opcode.
+>>>>>>> 26e935e (wip: Add support for F extension)
 			}
 
 			// If there was a trap, do NOT allow register writeback.

@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include "default64mbdtc.h"
 
@@ -36,6 +35,10 @@ static int ReadKBByte();
 #define MINIRV32_HANDLE_MEM_LOAD_CONTROL( addy, rval ) rval = HandleControlLoad( addy );
 #define MINIRV32_OTHERCSR_WRITE( csrno, value ) HandleOtherCSRWrite( image, csrno, value );
 #define MINIRV32_OTHERCSR_READ( csrno, value ) value = HandleOtherCSRRead( image, csrno );
+
+#ifndef MINIRV32IMATINY
+#include "extension-F.h"
+#endif
 
 #include "mini-rv32ima.h"
 

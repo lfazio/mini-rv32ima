@@ -15,12 +15,15 @@ else
 endif
 
 
-mini-rv32ima : mini-rv32ima.c mini-rv32ima.h default64mbdtc.h
+mini-rv32ima : mini-rv32ima.c mini-rv32ima.h default64mbdtc.h extension-F.h
 	# for debug
 	gcc -o $@ $< -g -O2 -Wall
 	gcc -o $@.tiny $< $(CFLAGS_TINY)
 
-mini-rv32ima.flt : mini-rv32ima.c mini-rv32ima.h
+mini-rv32ima.tiny : mini-rv32ima.c mini-rv32ima.h default64mbdtc.h extension-F.h
+	gcc -o $@ $< $(CFLAGS_TINY)
+
+mini-rv32ima.flt : mini-rv32ima.c mini-rv32ima.h extension-F.h
 	../buildroot/output/host/bin/riscv32-buildroot-linux-uclibc-gcc -O4 -funroll-loops -s -march=rv32ima -mabi=ilp32 -fPIC $< -Wl,-elf2flt=-r -o $@
 
 # Deply with:  make clean all && cp mini-rv32ima.flt ../buildroot/output/target/root/ && make -C .. toolchain && make testkern
@@ -85,5 +88,4 @@ dumpkern :
 	../buildroot/output/host/bin/riscv32-buildroot-linux-uclibc-objdump -t ../buildroot/output/build/linux-6.8-rc1/vmlinux >fw_payload.t
 
 clean :
-	rm -rf mini-rv32ima mini-rv32ima.flt
-
+	rm -rf mini-rv32ima mini-rv32ima.tiny mini-rv32ima.flt
