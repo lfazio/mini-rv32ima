@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include "default64mbdtc.h"
 
@@ -36,6 +35,10 @@ static int ReadKBByte();
 #define MINIRV32_HANDLE_MEM_LOAD_CONTROL( addy, rval ) rval = HandleControlLoad( addy );
 #define MINIRV32_OTHERCSR_WRITE( csrno, value ) HandleOtherCSRWrite( image, csrno, value );
 #define MINIRV32_OTHERCSR_READ( csrno, value ) value = HandleOtherCSRRead( image, csrno );
+
+#ifndef MINIRV32IMATINY
+#include "extension-F.h"
+#endif
 
 #include "mini-rv32ima.h"
 
@@ -174,8 +177,8 @@ restart:
 	// The core lives at the end of RAM.
 	core = (struct MiniRV32IMAState *)(ram_image + ram_amt - sizeof( struct MiniRV32IMAState ));
 	core->pc = MINIRV32_RAM_IMAGE_OFFSET;
-	core->regs[10] = 0x00; //hart ID
-	core->regs[11] = dtb_ptr?(dtb_ptr+MINIRV32_RAM_IMAGE_OFFSET):0; //dtb_pa (Must be valid pointer) (Should be pointer to dtb)
+	core->x[10] = 0x00; //hart ID
+	core->x[11] = dtb_ptr?(dtb_ptr+MINIRV32_RAM_IMAGE_OFFSET):0; //dtb_pa (Must be valid pointer) (Should be pointer to dtb)
 	core->extraflags |= 3; // Machine-mode.
 
 	if( dtb_file_name == 0 )
@@ -509,12 +512,28 @@ static void DumpState( struct MiniRV32IMAState * core, uint8_t * ram_image )
 	}
 	else
 		printf( "[xxxxxxxxxx] " ); 
-	uint32_t * regs = core->regs;
+	uint32_t * x = core->x;
 	printf( "Z:%08x ra:%08x sp:%08x gp:%08x tp:%08x t0:%08x t1:%08x t2:%08x s0:%08x s1:%08x a0:%08x a1:%08x a2:%08x a3:%08x a4:%08x a5:%08x ",
-		regs[0], regs[1], regs[2], regs[3], regs[4], regs[5], regs[6], regs[7],
-		regs[8], regs[9], regs[10], regs[11], regs[12], regs[13], regs[14], regs[15] );
+		x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7],
+		x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15] );
 	printf( "a6:%08x a7:%08x s2:%08x s3:%08x s4:%08x s5:%08x s6:%08x s7:%08x s8:%08x s9:%08x s10:%08x s11:%08x t3:%08x t4:%08x t5:%08x t6:%08x\n",
-		regs[16], regs[17], regs[18], regs[19], regs[20], regs[21], regs[22], regs[23],
-		regs[24], regs[25], regs[26], regs[27], regs[28], regs[29], regs[30], regs[31] );
+		x[16], x[17], x[18], x[19], x[20], x[21], x[22], x[23],
+		x[24], x[25], x[26], x[27], x[28], x[29], x[30], x[31] );
+#ifndef MINIRV32IMATINY
+	freg_t * f = core->f;
+	printf( "f0:%08x(%f) f1:%08x(%f) f2:%08x(%f) f3:%08x(%f) f4:%08x(%f) f5:%08x(%f) f6:%08x(%f) f7:%08x(%f)\n",
+		f[0].u32, f[0].f32, f[1].u32, f[1].f32, f[2].u32, f[2].f32, f[3].u32, f[3].f32,
+		f[4].u32, f[4].f32, f[5].u32, f[5].f32, f[6].u32, f[6].f32, f[7].u32, f[7].f32 );
+	printf( "f8:%08x(%f) f9:%08x(%f) f10:%08x(%f) f11:%08x(%f) f12:%08x(%f) f13:%08x(%f) f14:%08x(%f) f15:%08x(%f)\n",
+		f[8].u32, f[8].f32, f[9].u32, f[9].f32, f[10].u32, f[10].f32, f[11].u32, f[11].f32,
+		f[12].u32, f[12].f32, f[13].u32, f[13].f32, f[14].u32, f[14].f32, f[15].u32, f[15].f32 );
+	printf( "f16:%08x(%f) f17:%08x(%f) f18:%08x(%f) f19:%08x(%f) f20:%08x(%f) f21:%08x(%f) f22:%08x(%f) f23:%08x(%f)\n",
+		f[16].u32, f[16].f32, f[17].u32, f[17].f32, f[18].u32, f[18].f32, f[19].u32, f[19].f32,
+		f[20].u32, f[20].f32, f[21].u32, f[21].f32, f[22].u32, f[22].f32, f[23].u32, f[23].f32 );
+	printf( "f24:%08x(%f) f25:%08x(%f) f26:%08x(%f) f27:%08x(%f) f28:%08x(%f) f29:%08x(%f) f30:%08x(%f) f31:%08x(%f)\n",
+		f[24].u32, f[24].f32, f[25].u32, f[25].f32, f[26].u32, f[26].f32, f[27].u32, f[27].f32,
+		f[28].u32, f[28].f32, f[29].u32, f[29].f32, f[30].u32, f[30].f32, f[31].u32, f[31].f32 );	
+	printf( "fcsr: %08x\n", core->fcsr );
+#endif // MINIRV32IMATINY
 }
 

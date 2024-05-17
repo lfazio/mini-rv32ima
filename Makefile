@@ -74,4 +74,3 @@ clean :
 	make -C packages/coremark clean
 	make -C buildroot clean
 	make -C riscv-tests/isa clean
-

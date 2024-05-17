@@ -57,6 +57,14 @@
 	#define MINIRV32_OTHERCSR_READ(...);
 #endif
 
+#ifndef MINIRV32_FCSR_WRITE
+	#define MINIRV32_FCSR_WRITE(...);
+#endif
+
+#ifndef MINIRV32_FCSR_READ
+	#define MINIRV32_FCSR_READ(...);
+#endif
+
 #ifndef MINIRV32_CUSTOM_MEMORY_BUS
 	#define MINIRV32_STORE4( ofs, val ) *(uint32_t*)(image + ofs) = val
 	#define MINIRV32_STORE2( ofs, val ) *(uint16_t*)(image + ofs) = val
@@ -68,13 +76,21 @@
 	#define MINIRV32_LOAD1_SIGNED( ofs ) *(int8_t*)(image + ofs)
 #endif
 
+#ifndef MINIRV32IMA_ADDITIONAL_F_STATE
+	#define MINIRV32IMA_ADDITIONAL_F_STATE
+#endif
+
+#ifndef MINIRV32IMA_F_OPCODES
+	#define MINIRV32IMA_F_OPCODES
+#endif
+
 // As a note: We quouple-ify these, because in HLSL, we will be operating with
 // uint4's.  We are going to uint4 data to/from system RAM.
 //
 // We're going to try to keep the full processor state to 12 x uint4.
 struct MiniRV32IMAState
 {
-	uint32_t regs[32];
+	uint32_t x[32];
 
 	uint32_t pc;
 	uint32_t mstatus;
@@ -100,6 +116,8 @@ struct MiniRV32IMAState
 	// Bit 2 = WFI (Wait for interrupt)
 	// Bit 3+ = Load/Store reservation LSBs.
 	uint32_t extraflags;
+
+	MINIRV32IMA_ADDITIONAL_F_STATE;
 };
 
 #ifndef MINIRV32_STEPPROTO
@@ -109,10 +127,10 @@ MINIRV32_DECORATE int32_t MiniRV32IMAStep( struct MiniRV32IMAState * state, uint
 #ifdef MINIRV32_IMPLEMENTATION
 
 #ifndef MINIRV32_CUSTOM_INTERNALS
-#define CSR( x ) state->x
-#define SETCSR( x, val ) { state->x = val; }
-#define REG( x ) state->regs[x]
-#define REGSET( x, val ) { state->regs[x] = val; }
+#define CSR( c ) state->c
+#define SETCSR( c, val ) do { state->c = (val); } while (0)
+#define REG( r ) state->x[(r)]
+#define REGSET( r, val ) do { state->x[(r)] = (val); } while (0)
 #endif
 
 #ifndef MINIRV32_STEPPROTO
@@ -171,7 +189,7 @@ MINIRV32_STEPPROTO
 		{
 			ir = MINIRV32_LOAD4( ofs_pc );
 			uint32_t rdid = (ir >> 7) & 0x1f;
-
+		
 			switch( ir & 0x7f )
 			{
 				case 0x37: // LUI (0b0110111)
@@ -355,12 +373,13 @@ MINIRV32_STEPPROTO
 						case 0x342: rval = CSR( mcause ); break;
 						case 0x343: rval = CSR( mtval ); break;
 						case 0xf11: rval = 0xff0ff0ff; break; //mvendorid
-						case 0x301: rval = 0x40401101; break; //misa (XLEN=32, IMA+X)
+						case 0x301: rval = 0x40401121; break; //misa (XLEN=32, IMAF+X)
 						//case 0x3B0: rval = 0; break; //pmpaddr0
 						//case 0x3a0: rval = 0; break; //pmpcfg0
 						//case 0xf12: rval = 0x00000000; break; //marchid
 						//case 0xf13: rval = 0x00000000; break; //mimpid
 						//case 0xf14: rval = 0x00000000; break; //mhartid
+						MINIRV32_FCSR_READ( csrno, rval );
 						default:
 							MINIRV32_OTHERCSR_READ( csrno, rval );
 							break;
@@ -393,6 +412,7 @@ MINIRV32_STEPPROTO
 						//case 0xf13: break; //mimpid
 						//case 0xf14: break; //mhartid
 						//case 0x301: break; //misa
+						MINIRV32_FCSR_WRITE( csrno, writeval , rval);
 						default:
 							MINIRV32_OTHERCSR_WRITE( csrno, writeval );
 							break;
@@ -478,6 +498,7 @@ MINIRV32_STEPPROTO
 					}
 					break;
 				}
+				MINIRV32IMA_F_OPCODES; \
 				default: trap = (2+1); // Fault: Invalid opcode.
 			}
 
@@ -535,5 +556,3 @@ MINIRV32_STEPPROTO
 #endif
 
 #endif
-
-
