@@ -37,6 +37,10 @@ static int ReadKBByte();
 #define MINIRV32_OTHERCSR_WRITE( csrno, value ) HandleOtherCSRWrite( image, csrno, value );
 #define MINIRV32_OTHERCSR_READ( csrno, value ) value = HandleOtherCSRRead( image, csrno );
 
+#ifndef MINIRV32IMATINY
+#include "extension-C.h"
+#endif
+
 #include "mini-rv32ima.h"
 
 uint8_t * ram_image = 0;
@@ -75,7 +79,7 @@ int main( int argc, char ** argv )
 				case 'l': param_continue = 1; fixed_update = 1; break;
 				case 'p': param_continue = 1; do_sleep = 0; break;
 				case 's': param_continue = 1; single_step = 1; break;
-				case 'd': param_continue = 1; fail_on_all_faults = 1; break; 
+				case 'd': param_continue = 1; fail_on_all_faults = 1; break;
 				case 't': if( ++i < argc ) time_divisor = SimpleReadNumberInt( argv[i], 1 ); break;
 				default:
 					if( param_continue )
@@ -95,7 +99,7 @@ int main( int argc, char ** argv )
 	}
 	if( show_help || image_file_name == 0 || time_divisor <= 0 )
 	{
-		fprintf( stderr, "./mini-rv32imaf [parameters]\n\t-m [ram amount]\n\t-f [running image]\n\t-k [kernel command line]\n\t-b [dtb file, or 'disable']\n\t-c instruction count\n\t-s single step with full processor state\n\t-t time divion base\n\t-l lock time base to instruction count\n\t-p disable sleep when wfi\n\t-d fail out immediately on all faults\n" );
+		fprintf( stderr, "./mini-rv32ima [parameters]\n\t-m [ram amount]\n\t-f [running image]\n\t-k [kernel command line]\n\t-b [dtb file, or 'disable']\n\t-c instruction count\n\t-s single step with full processor state\n\t-t time divion base\n\t-l lock time base to instruction count\n\t-p disable sleep when wfi\n\t-d fail out immediately on all faults\n" );
 		return 1;
 	}
 

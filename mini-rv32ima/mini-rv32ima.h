@@ -68,6 +68,11 @@
 	#define MINIRV32_LOAD1_SIGNED( ofs ) *(int8_t*)(image + ofs)
 #endif
 
+#ifndef MINIRV32IMA_EXTENSION_C_OPCODES
+	#define MINIRV32IMA_EXTENSION_C_OPCODES trap = (2 + 1)
+	#define IALIGN (4)
+#endif
+
 // As a note: We quouple-ify these, because in HLSL, we will be operating with
 // uint4's.  We are going to uint4 data to/from system RAM.
 //
@@ -152,6 +157,7 @@ MINIRV32_STEPPROTO
 	else // No timer interrupt?  Execute a bunch of instructions.
 	for( int icount = 0; icount < count; icount++ )
 	{
+		uint32_t pc_step = 4;
 		uint32_t ir = 0;
 		rval = 0;
 		cycle++;
@@ -162,15 +168,18 @@ MINIRV32_STEPPROTO
 			trap = 1 + 1;  // Handle access violation on instruction read.
 			break;
 		}
-		else if( ofs_pc & 3 )
+		else if( ofs_pc & (IALIGN-1) )
 		{
 			trap = 1 + 0;  //Handle PC-misaligned access
 			break;
 		}
 		else
 		{
-			ir = MINIRV32_LOAD4( ofs_pc );
-			uint32_t rdid = (ir >> 7) & 0x1f;
+			uint32_t rdid;
+
+			ir = MINIRV32_LOAD4(ofs_pc);
+
+			rdid = (ir >> 7) & 0x1f;
 
 			switch( ir & 0x7f )
 			{
@@ -198,7 +207,7 @@ MINIRV32_STEPPROTO
 				case 0x63: // Branch (0b1100011)
 				{
 					uint32_t immm4 = ((ir & 0xf00)>>7) | ((ir & 0x7e000000)>>20) | ((ir & 0x80) << 4) | ((ir >> 31)<<12);
-					immm4 = ((((int32_t)immm4)<<19)>>19);
+					immm4 = ((int32_t)(immm4)<<19)>>19;
 					int32_t rs1 = REG((ir >> 15) & 0x1f);
 					int32_t rs2 = REG((ir >> 20) & 0x1f);
 					immm4 = pc + immm4 - 4;
@@ -355,7 +364,7 @@ MINIRV32_STEPPROTO
 						case 0x342: rval = CSR( mcause ); break;
 						case 0x343: rval = CSR( mtval ); break;
 						case 0xf11: rval = 0xff0ff0ff; break; //mvendorid
-						case 0x301: rval = 0x40401101; break; //misa (XLEN=32, IMA+X)
+						case 0x301: rval = 0x40401105; break; //misa (XLEN=32, IMAC+X)
 						//case 0x3B0: rval = 0; break; //pmpaddr0
 						//case 0x3a0: rval = 0; break; //pmpcfg0
 						//case 0xf12: rval = 0x00000000; break; //marchid
@@ -412,7 +421,7 @@ MINIRV32_STEPPROTO
 							SETCSR( extraflags, (startextraflags & ~3) | ((startmstatus >> 11) & 3) );
 							pc = CSR( mepc ) -4;
 						} else {
-							switch (csrno) {
+							switch( csrno) {
 							case 0:
 								trap = ( CSR( extraflags ) & 3) ? (11+1) : (8+1); // ECALL; 8 = "Environment call from U-mode"; 11 = "Environment call from M-mode"
 								break;
@@ -478,7 +487,7 @@ MINIRV32_STEPPROTO
 					}
 					break;
 				}
-				default: trap = (2+1); // Fault: Invalid opcode.
+				default: MINIRV32IMA_EXTENSION_C_OPCODES; // Fault: Invalid opcode.
 			}
 
 			// If there was a trap, do NOT allow register writeback.
@@ -496,7 +505,7 @@ MINIRV32_STEPPROTO
 
 		MINIRV32_POSTEXEC( pc, ir, trap );
 
-		pc += 4;
+		pc += pc_step;
 	}
 
 	// Handle traps and interrupts.
