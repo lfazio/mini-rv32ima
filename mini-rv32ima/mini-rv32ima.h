@@ -183,15 +183,14 @@ MINIRV32_STEPPROTO
 				case 0x6F: // JAL (0b1101111)
 				{
 					int32_t reladdy = ((ir & 0x80000000)>>11) | ((ir & 0x7fe00000)>>20) | ((ir & 0x00100000)>>9) | ((ir&0x000ff000));
-					if( reladdy & 0x00100000 ) reladdy |= 0xffe00000; // Sign extension.
+					reladdy = (reladdy<<11)>>11; // Sign extension.
 					rval = pc + 4;
 					pc = pc + reladdy - 4;
 					break;
 				}
 				case 0x67: // JALR (0b1100111)
 				{
-					uint32_t imm = ir >> 20;
-					int32_t imm_se = imm | (( imm & 0x800 )?0xfffff000:0);
+					int32_t imm_se = ((int32_t)ir)>>20;
 					rval = pc + 4;
 					pc = ( (REG( (ir >> 15) & 0x1f ) + imm_se) & ~1) - 4;
 					break;
@@ -199,7 +198,7 @@ MINIRV32_STEPPROTO
 				case 0x63: // Branch (0b1100011)
 				{
 					uint32_t immm4 = ((ir & 0xf00)>>7) | ((ir & 0x7e000000)>>20) | ((ir & 0x80) << 4) | ((ir >> 31)<<12);
-					if( immm4 & 0x1000 ) immm4 |= 0xffffe000;
+					immm4 = ((((int32_t)immm4)<<19)>>19);
 					int32_t rs1 = REG((ir >> 15) & 0x1f);
 					int32_t rs2 = REG((ir >> 20) & 0x1f);
 					immm4 = pc + immm4 - 4;
@@ -220,8 +219,7 @@ MINIRV32_STEPPROTO
 				case 0x03: // Load (0b0000011)
 				{
 					uint32_t rs1 = REG((ir >> 15) & 0x1f);
-					uint32_t imm = ir >> 20;
-					int32_t imm_se = imm | (( imm & 0x800 )?0xfffff000:0);
+					int32_t imm_se = ((int32_t)ir) >> 20;
 					uint32_t rsval = rs1 + imm_se;
 
 					rsval -= MINIRV32_RAM_IMAGE_OFFSET;
@@ -258,7 +256,7 @@ MINIRV32_STEPPROTO
 					uint32_t rs1 = REG((ir >> 15) & 0x1f);
 					uint32_t rs2 = REG((ir >> 20) & 0x1f);
 					uint32_t addy = ( ( ir >> 7 ) & 0x1f ) | ( ( ir & 0xfe000000 ) >> 20 );
-					if( addy & 0x800 ) addy |= 0xfffff000;
+					addy = (((int32_t)addy)<<20)>>20;
 					addy += rs1 - MINIRV32_RAM_IMAGE_OFFSET;
 					rdid = 0;
 
@@ -291,8 +289,7 @@ MINIRV32_STEPPROTO
 				case 0x13: // Op-immediate 0b0010011
 				case 0x33: // Op           0b0110011
 				{
-					uint32_t imm = ir >> 20;
-					imm = imm | (( imm & 0x800 )?0xfffff000:0);
+					uint32_t imm = ((int32_t)ir) >> 20;
 					uint32_t rs1 = REG((ir >> 15) & 0x1f);
 					uint32_t is_reg = !!( ir & 0x20 );
 					uint32_t rs2 = is_reg ? REG(imm & 0x1f) : imm;
