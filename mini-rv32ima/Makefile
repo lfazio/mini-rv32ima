@@ -81,8 +81,8 @@ sixtyfourmb.dtb : sixtyfourmb.dts
 
 
 dumpkern :
-	../buildroot/output/host/bin/riscv32-buildroot-linux-uclibc-objdump -S ../buildroot/output/build/linux-5.18/vmlinux >fw_payload.S
-	../buildroot/output/host/bin/riscv32-buildroot-linux-uclibc-objdump -t ../buildroot/output/build/linux-5.18/vmlinux >fw_payload.t
+	../buildroot/output/host/bin/riscv32-buildroot-linux-uclibc-objdump -S ../buildroot/output/build/linux-6.8-rc1/vmlinux >fw_payload.S
+	../buildroot/output/host/bin/riscv32-buildroot-linux-uclibc-objdump -t ../buildroot/output/build/linux-6.8-rc1/vmlinux >fw_payload.t
 
 clean :
 	rm -rf mini-rv32ima mini-rv32ima.flt
