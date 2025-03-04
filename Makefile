@@ -58,6 +58,10 @@ dtbextract : $(DTC)
 	cd buildroot && output/host/bin/qemu-system-riscv32 -cpu rv32,mmu=false -m 128M -machine virt -nographic -kernel output/images/Image -bios none -drive file=output/images/rootfs.ext2,format=raw,id=hd0 -device virtio-blk-device,drive=hd0 -machine dumpdtb=../dtb.dtb && cd ..
 	$(DTC) -I dtb -O dts -o dtb.dts dtb.dtb
 
-tests :
+riscv-tests :
 	git clone https://github.com/riscv-software-src/riscv-tests
-	./configure --prefix=
+	cd riscv-tests && git submodule update --init --recursive
+	cd riscv-tests && patch -p1 < ../patches/riscv-tests.build.patch
+
+tests : riscv-tests toolchain
+	make -C riscv-tests/isa XLEN=32 RISCV_PREFIX=$(PWD)/buildroot/output/host/bin/riscv32-linux- all
