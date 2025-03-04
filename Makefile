@@ -60,4 +60,13 @@ dtbextract : $(DTC)
 
 tests :
 	git clone https://github.com/riscv-software-src/riscv-tests
-	./configure --prefix=
+	cd riscv-tests && git submodule update --init --recursive
+	cd riscv-tests && patch -p1 < ../patches/riscv-tests.build.patch
+	make -C riscv-tests/isa XLEN=32 RISCV_PREFIX=$(PWD)/buildroot/output/host/bin/riscv32-linux- all
+
+clean :
+	make -C baremetal clean
+	make -C hello_linux clean
+	make -C mini-rv32ima clean
+	make -C packages/coremark clean
+	make -C buildroot clean
