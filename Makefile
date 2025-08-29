@@ -65,3 +65,12 @@ riscv-tests :
 
 tests : riscv-tests toolchain
 	make -C riscv-tests/isa XLEN=32 RISCV_PREFIX=$(PWD)/buildroot/output/host/bin/riscv32-linux- all
+
+clean :
+	make -C baremetal clean
+	make -C hello_linux clean
+	make -C mini-rv32ima clean
+	make -C packages/coremark clean
+	make -C buildroot clean
+	make -C riscv-tests/isa clean
+
